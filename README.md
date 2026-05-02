@@ -1,5 +1,9 @@
 # Restore-WindowsFonts
 
+<!-- BADGES:START -->
+![License](https://img.shields.io/github/license/5a9awneh/Restore-WindowsFonts?style=for-the-badge) ![PowerShell](https://img.shields.io/badge/PowerShell-%235391FE.svg?style=for-the-badge&logo=powershell&logoColor=white) ![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white) ![Last Commit](https://img.shields.io/github/last-commit/5a9awneh/Restore-WindowsFonts?style=for-the-badge)
+<!-- BADGES:END -->
+
 Restores corrupted or missing Windows system fonts by extracting them from a Windows ISO you supply, then reinstalling them, clearing font caches, and repairing font registry entries. Resolves Adobe Acrobat "Cannot find or create the font" errors caused by missing Arial, Times New Roman, and Courier New.
 
 ## ⚙️ Requirements

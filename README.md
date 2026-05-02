@@ -20,9 +20,10 @@ The script extracts fonts from Windows installation media at runtime. Three opti
 | Option | How |
 |--------|-----|
 | **💾 USB / 📀 DVD** *(easiest)* | Plug in any Windows installation USB or DVD — detected automatically, no extra steps |
-| 💿 **ISO in script folder** | Drop a `.iso` file into the same folder as the script — picked up automatically *(don't have one? see **Obtaining a Windows 11 ISO** below)* |
-| 💿 **Explicit ISO path** | Pass the path via `RUN.bat "D:\ISOs\Win11.iso"` or `-IsoPath "D:\ISOs\Win11.iso"` *(don't have one? see **Obtaining a Windows 11 ISO** below)* |
+| 💿 **ISO in script folder** | Drop a `.iso` file into the same folder as the script — picked up automatically |
+| 💿 **Explicit ISO path** | Pass the path via `RUN.bat "D:\ISOs\Win11.iso"` or `-IsoPath "D:\ISOs\Win11.iso"` |
 
+> Don't have a Windows ISO? See **Obtaining a Windows 11 ISO** below.
 > Already have the fonts? Populate `.\Fonts\` with the `.ttf` files and the extraction step is skipped entirely.
 
 ---

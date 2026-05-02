@@ -1,0 +1,5 @@
+# Font files are not included in this repository.
+# See README.md for instructions on sourcing fonts from a Windows ISO.
+#
+# This file exists to preserve the Fonts/ directory structure in the repo.
+# The script will populate this folder at runtime during font acquisition.

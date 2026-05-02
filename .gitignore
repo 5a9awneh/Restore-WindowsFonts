@@ -1,0 +1,33 @@
+# Font files — proprietary, not redistributable
+Fonts/*
+fonts/*
+*.ttf
+# Keep directory placeholder
+!Fonts/.gitkeep
+!fonts/.gitkeep
+
+# ISO / disk image files
+*.iso
+*.img
+
+# WIM mount working directory
+WimMount/
+wimmount/
+
+# Log files
+*.log
+
+# OS artifacts
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# IDE / editor artifacts
+.vscode/
+.idea/
+*.suo
+
+# Temp / backup files
+*.tmp
+*.bak
+*.orig

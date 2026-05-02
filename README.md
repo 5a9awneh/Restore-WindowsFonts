@@ -1,7 +1,7 @@
 # Restore-WindowsFonts
 
 <!-- BADGES:START -->
-![License](https://img.shields.io/github/license/5a9awneh/Restore-WindowsFonts?style=for-the-badge) ![PowerShell](https://img.shields.io/badge/PowerShell-%235391FE.svg?style=for-the-badge&logo=powershell&logoColor=white) ![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white) ![Last Commit](https://img.shields.io/github/last-commit/5a9awneh/Restore-WindowsFonts?style=for-the-badge)
+[![License](https://img.shields.io/github/license/5a9awneh/Restore-WindowsFonts)](LICENSE) [![PowerShell](https://img.shields.io/badge/PowerShell-5391FE?logo=powershell&logoColor=white)](https://learn.microsoft.com/en-us/powershell/) [![Windows](https://img.shields.io/badge/Windows-0078D6?logo=windows&logoColor=white)](https://www.microsoft.com/windows) [![Last Commit](https://img.shields.io/github/last-commit/5a9awneh/Restore-WindowsFonts)](https://github.com/5a9awneh/Restore-WindowsFonts/commits/main) [<img src="https://madebyhuman.iamjarl.com/badges/loop-white.svg" alt="Human in the Loop" height="20">](https://madebyhuman.iamjarl.com)
 <!-- BADGES:END -->
 
 Restores corrupted or missing Windows system fonts by extracting them from a Windows ISO you supply, then reinstalling them, clearing font caches, and repairing font registry entries. Resolves Adobe Acrobat "Cannot find or create the font" errors caused by missing Arial, Times New Roman, and Courier New.

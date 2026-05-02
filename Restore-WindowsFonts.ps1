@@ -13,6 +13,20 @@ $systemFontsPath = "$env:WINDIR\Fonts"
 Write-Host "`n=======================================`n  Windows Font Restoration Tool v1.0`n=======================================" -ForegroundColor Cyan
 Write-Host "Fixes Adobe Acrobat font errors & corrupted system fonts`n" -ForegroundColor Gray
 
+Write-Host "This script will:" -ForegroundColor Yellow
+Write-Host "  - Stop font cache services" -ForegroundColor Yellow
+Write-Host "  - Clear the system font cache" -ForegroundColor Yellow
+Write-Host "  - Take ownership of files in $env:WINDIR\Fonts" -ForegroundColor Yellow
+Write-Host "  - Overwrite system font files" -ForegroundColor Yellow
+Write-Host "  - Modify font registry entries" -ForegroundColor Yellow
+Write-Host ""
+$confirm = Read-Host "Type YES to continue or press Enter to abort"
+if ($confirm -ne 'YES') {
+    Write-Host "Aborted. No changes were made." -ForegroundColor Yellow
+    exit 0
+}
+Write-Host ""
+
 # Ensure Fonts directory exists
 if (-not (Test-Path $bundledFontsPath)) {
     New-Item -ItemType Directory -Path $bundledFontsPath | Out-Null

@@ -10,10 +10,24 @@ Restores corrupted or missing Windows system fonts by extracting them from a Win
 
 - Windows 10 / 11
 - PowerShell 5.1 or later, run as Administrator
-- A Windows 11 ISO *(required only if `.\Fonts\` is not already populated — see below)*
+- Windows installation media *(ISO or USB/DVD — see **Supplying Fonts** below; not needed if `.\.Fonts\` is already populated)*
 - DISM PowerShell module *(built into Windows — no third-party tools required)*
 
-## 🔧 Parameters
+## � Supplying Fonts
+
+The script extracts fonts from Windows installation media at runtime. Three options, in order of convenience:
+
+| Option | How |
+|--------|-----|
+| **USB / DVD** *(easiest)* | Plug in any Windows installation USB or DVD — detected automatically, no extra steps |
+| **ISO in script folder** | Drop a `.iso` file into the same folder as the script — picked up automatically |
+| **Explicit ISO path** | Pass the path via `RUN.bat "D:\ISOs\Win11.iso"` or `-IsoPath "D:\ISOs\Win11.iso"` |
+
+> Already have the fonts? Populate `.\Fonts\` with the `.ttf` files and the extraction step is skipped entirely.
+
+---
+
+## �🔧 Parameters
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
@@ -35,7 +49,7 @@ RUN.bat "D:\ISOs\Win11.iso"
 .\Restore-WindowsFonts.ps1 -IsoPath "D:\ISOs\Win11.iso"
 ```
 
-## 🖼️ How to Obtain a Windows 11 ISO
+## 🖼️ Obtaining a Windows 11 ISO *(if needed)*
 
 > Microsoft's download page shows a Media Creation Tool to Windows users. A User-Agent spoof reveals the direct ISO link. **Official source only — do not use third-party sites.**
 

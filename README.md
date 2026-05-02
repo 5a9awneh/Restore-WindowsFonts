@@ -21,6 +21,7 @@ Restores corrupted or missing Windows system fonts by extracting them from a Win
 
 ```
 RUN.bat
+RUN.bat "D:\ISOs\Win11.iso"
 ```
 
 **Manual** (PowerShell as Administrator):
@@ -45,10 +46,13 @@ RUN.bat
 ### Step 0 — Font acquisition *(skipped if `.\Fonts\` is already populated)*
 
 1. Checks for the 12 critical fonts (Arial, Times New Roman, and Courier New families)
-2. If any are missing, locates a Windows ISO (auto-detect in script folder, or via `-IsoPath`)
-3. Mounts the ISO and embedded `install.wim` / `install.esd` using DISM
+2. If any are missing, locates Windows installation media in this order:
+   - `-IsoPath` parameter value, or `RUN.bat "path\to\windows.iso"`
+   - `.iso` file auto-detected in the script folder
+   - Windows installation USB drive or DVD (removable/optical drives scanned automatically — no ISO needed)
+3. Mounts `install.wim` / `install.esd` via DISM — ISO is mounted first if needed; USB/DVD WIM is accessed directly without mounting
 4. Copies all 30 target `.ttf` files from the WIM's `\Windows\Fonts\` into `.\Fonts\`
-5. Dismounts the WIM and ISO cleanly
+5. Dismounts the WIM cleanly; dismounts ISO only if it was mounted
 
 ### Steps 1–6 — Font repair
 

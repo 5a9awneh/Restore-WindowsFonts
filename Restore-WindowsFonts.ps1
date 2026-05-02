@@ -24,42 +24,77 @@ Write-Host "[0/6] Checking font bundle..." -ForegroundColor Yellow
 $criticalFonts = @(
     "arial.ttf", "arialbd.ttf", "ariali.ttf", "arialbi.ttf",
     "times.ttf", "timesbd.ttf", "timesi.ttf", "timesbi.ttf",
-    "cour.ttf",  "courbd.ttf",  "couri.ttf",  "courbi.ttf"
+    "cour.ttf", "courbd.ttf", "couri.ttf", "courbi.ttf"
 )
 $warningFonts = @(
     "verdana.ttf", "verdanab.ttf", "verdanai.ttf", "verdanaz.ttf",
-    "tahoma.ttf",  "tahomabd.ttf",
+    "tahoma.ttf", "tahomabd.ttf",
     "georgia.ttf", "georgiab.ttf", "georgiai.ttf", "georgiaz.ttf",
     "calibri.ttf", "calibrib.ttf", "calibrii.ttf", "calibriz.ttf",
     "segoeui.ttf", "segoeuib.ttf", "segoeuii.ttf", "seguisym.ttf"
 )
 
 $missingCritical = $criticalFonts | Where-Object { -not (Test-Path (Join-Path $bundledFontsPath $_)) }
-$missingWarning  = $warningFonts  | Where-Object { -not (Test-Path (Join-Path $bundledFontsPath $_)) }
+$missingWarning = $warningFonts  | Where-Object { -not (Test-Path (Join-Path $bundledFontsPath $_)) }
 
 if ($missingCritical.Count -eq 0) {
     $fontCount = @(Get-ChildItem "$bundledFontsPath\*.ttf" -ErrorAction SilentlyContinue).Count
     Write-Host "  ✓ Critical fonts present ($fontCount total) — skipping acquisition" -ForegroundColor Green
     if ($missingWarning.Count -gt 0) {
         Write-Warning "  $($missingWarning.Count) non-critical fonts absent: $($missingWarning -join ', ')"
-        Write-Warning "  Re-run with an ISO to acquire them, or proceed without them."
+        Write-Warning "  Re-run with installation media to acquire them, or proceed without them."
     }
 }
 else {
-    Write-Host "  Missing $($missingCritical.Count) critical fonts — locating Windows ISO..." -ForegroundColor Yellow
+    Write-Host "  Missing $($missingCritical.Count) critical fonts — locating Windows installation media..." -ForegroundColor Yellow
 
+    # === RESOLUTION CHAIN ===
     $isoFile = $null
+    $wimPath = $null
+    $isoMounted = $false
+
+    # Tier 1: -IsoPath parameter
     if ($IsoPath -and (Test-Path $IsoPath -PathType Leaf)) {
         $isoFile = $IsoPath
-    }
-    else {
-        $isoFile = Get-ChildItem -Path $scriptDir -Filter "*.iso" -ErrorAction SilentlyContinue |
-                   Select-Object -First 1 -ExpandProperty FullName
+        Write-Host "  Source: ISO specified via -IsoPath" -ForegroundColor Gray
     }
 
+    # Tier 2: .iso file in script directory
     if (-not $isoFile) {
+        $isoFile = Get-ChildItem -Path $scriptDir -Filter "*.iso" -ErrorAction SilentlyContinue |
+        Select-Object -First 1 -ExpandProperty FullName
+        if ($isoFile) {
+            Write-Host "  Source: ISO auto-detected in script folder: $isoFile" -ForegroundColor Gray
+        }
+    }
+
+    # Tier 3: Windows installation USB or optical media (removable=2, CD-ROM=5)
+    if (-not $isoFile) {
+        Write-Host "  No ISO found — scanning for Windows installation media (USB/DVD)..." -ForegroundColor Yellow
+        $removableDrives = Get-CimInstance Win32_LogicalDisk | Where-Object { $_.DriveType -in @(2, 5) }
+        $usbMatches = @()
+        foreach ($drive in $removableDrives) {
+            foreach ($candidate in @("install.wim", "install.esd")) {
+                $candidatePath = Join-Path "$($drive.DeviceID)\sources" $candidate
+                if (Test-Path $candidatePath) {
+                    $usbMatches += [PSCustomObject]@{ Drive = $drive.DeviceID; Path = $candidatePath }
+                    break
+                }
+            }
+        }
+        if ($usbMatches.Count -gt 0) {
+            $wimPath = $usbMatches[0].Path
+            Write-Host "  ✓ Windows media found at $($usbMatches[0].Drive) — using directly (no ISO mount needed)" -ForegroundColor Green
+            if ($usbMatches.Count -gt 1) {
+                Write-Warning "  Multiple media drives detected. Using $($usbMatches[0].Drive). Others: $(($usbMatches[1..($usbMatches.Count-1)] | ForEach-Object { $_.Drive }) -join ', ')"
+            }
+        }
+    }
+
+    # No source found
+    if (-not $isoFile -and -not $wimPath) {
         Write-Error @"
-No Windows ISO found. Critical fonts missing: $($missingCritical -join ', ')
+No Windows installation media found. Critical fonts missing: $($missingCritical -join ', ')
 
 To obtain a Windows 11 ISO (official source only):
   1. Install a User-Agent switcher browser extension (Chrome or Firefox)
@@ -69,40 +104,74 @@ To obtain a Windows 11 ISO (official source only):
   4. Select your language -> 64-bit Download
   5. Place the downloaded .iso in: $scriptDir
      Or run: .\Restore-WindowsFonts.ps1 -IsoPath "C:\path\to\windows11.iso"
+     Or plug in a Windows installation USB drive.
 "@
         exit 1
     }
 
-    Write-Host "  ISO: $isoFile" -ForegroundColor Gray
-
-    Write-Host "  Mounting ISO..." -ForegroundColor Yellow
-    $diskImage   = Mount-DiskImage -ImagePath $isoFile -PassThru
-    $driveLetter = ($diskImage | Get-Volume).DriveLetter + ":"
-    Write-Host "  ✓ ISO mounted at $driveLetter" -ForegroundColor Green
-
-    $wimPath = $null
-    foreach ($candidate in @("install.wim", "install.esd")) {
-        $full = Join-Path "$driveLetter\sources" $candidate
-        if (Test-Path $full) { $wimPath = $full; break }
-    }
-
+    # === ISO MOUNT (only if no USB/DVD WIM was found directly) ===
     if (-not $wimPath) {
-        Dismount-DiskImage -ImagePath $isoFile | Out-Null
-        Write-Error "Could not find install.wim or install.esd under ${driveLetter}\sources\"
-        exit 1
+        Write-Host "  ISO: $isoFile" -ForegroundColor Gray
+        Write-Host "  Mounting ISO..." -ForegroundColor Yellow
+        Mount-DiskImage -ImagePath $isoFile | Out-Null
+        $driveLetter = $null
+        for ($attempt = 0; $attempt -lt 6 -and -not $driveLetter; $attempt++) {
+            Start-Sleep -Milliseconds 500
+            $driveLetter = (Get-DiskImage -ImagePath $isoFile | Get-Volume).DriveLetter
+        }
+        if (-not $driveLetter) {
+            Dismount-DiskImage -ImagePath $isoFile | Out-Null
+            Write-Error "ISO mounted but no drive letter was assigned. Try again."
+            exit 1
+        }
+        $driveLetter = $driveLetter + ":"
+        $isoMounted = $true
+        Write-Host "  ✓ ISO mounted at $driveLetter" -ForegroundColor Green
+
+        foreach ($candidate in @("install.wim", "install.esd")) {
+            $full = Join-Path "$driveLetter\sources" $candidate
+            if (Test-Path $full) { $wimPath = $full; break }
+        }
+
+        if (-not $wimPath) {
+            Dismount-DiskImage -ImagePath $isoFile | Out-Null
+            Write-Error "Could not find install.wim or install.esd under ${driveLetter}\sources\"
+            exit 1
+        }
     }
 
+    # === WIM MOUNT ===
     $wimMountPath = Join-Path $scriptDir "WimMount"
     if (-not (Test-Path $wimMountPath)) { New-Item -ItemType Directory -Path $wimMountPath | Out-Null }
 
-    Write-Host "  Mounting WIM (this may take a minute)..." -ForegroundColor Yellow
     $wimIndex = (Get-WindowsImage -ImagePath $wimPath | Select-Object -First 1).ImageIndex
-    Mount-WindowsImage -ImagePath $wimPath -Index $wimIndex -Path $wimMountPath -ReadOnly | Out-Null
+
+    $wimJob = Start-Job -ArgumentList $wimPath, $wimIndex, $wimMountPath -ScriptBlock {
+        param($wimPath, $wimIndex, $wimMountPath)
+        Import-Module Dism
+        Mount-WindowsImage -ImagePath $wimPath -Index $wimIndex -Path $wimMountPath -ReadOnly | Out-Null
+    }
+    $elapsed = 0
+    while ($wimJob.State -eq 'Running') {
+        Write-Progress -Activity "Mounting WIM image" -Status "Elapsed: ${elapsed}s — please wait..." -PercentComplete -1
+        Start-Sleep -Seconds 1
+        $elapsed++
+    }
+    Write-Progress -Activity "Mounting WIM image" -Completed
+
+    if ($wimJob.State -eq 'Failed') {
+        $jobError = Receive-Job -Job $wimJob 2>&1
+        Remove-Job -Job $wimJob
+        if ($isoMounted) { Dismount-DiskImage -ImagePath $isoFile | Out-Null }
+        Write-Error "Failed to mount WIM image. Ensure DISM is available and the WIM is not corrupted.`n$jobError"
+        exit 1
+    }
+    Remove-Job -Job $wimJob
     Write-Host "  ✓ WIM mounted" -ForegroundColor Green
 
     Write-Host "  Copying fonts from WIM..." -ForegroundColor Yellow
     $wimFontsPath = Join-Path $wimMountPath "Windows\Fonts"
-    $copiedCount  = 0
+    $copiedCount = 0
     foreach ($font in ($criticalFonts + $warningFonts)) {
         $src = Join-Path $wimFontsPath $font
         if (Test-Path $src) {
@@ -116,8 +185,10 @@ To obtain a Windows 11 ISO (official source only):
     Remove-Item $wimMountPath -Recurse -Force -ErrorAction SilentlyContinue
     Write-Host "  ✓ WIM dismounted" -ForegroundColor Green
 
-    Dismount-DiskImage -ImagePath $isoFile | Out-Null
-    Write-Host "  ✓ ISO dismounted" -ForegroundColor Green
+    if ($isoMounted) {
+        Dismount-DiskImage -ImagePath $isoFile | Out-Null
+        Write-Host "  ✓ ISO dismounted" -ForegroundColor Green
+    }
 
     $missingCritical = $criticalFonts | Where-Object { -not (Test-Path (Join-Path $bundledFontsPath $_)) }
     if ($missingCritical.Count -gt 0) {
@@ -127,7 +198,7 @@ To obtain a Windows 11 ISO (official source only):
 
     $missingWarning = $warningFonts | Where-Object { -not (Test-Path (Join-Path $bundledFontsPath $_)) }
     if ($missingWarning.Count -gt 0) {
-        Write-Warning "  Non-critical fonts not found in ISO: $($missingWarning -join ', ')"
+        Write-Warning "  Non-critical fonts not found in media: $($missingWarning -join ', ')"
     }
 
     $fontCount = @(Get-ChildItem "$bundledFontsPath\*.ttf" -ErrorAction SilentlyContinue).Count
@@ -342,7 +413,7 @@ Write-Host "2. After reboot, test Adobe Acrobat with problematic PDFs" -Foregrou
 Write-Host "3. The 'Arial-BoldMT' and 'Times New Roman' errors should be gone" -ForegroundColor White
 
 Write-Host "`nVerify fonts after reboot:" -ForegroundColor Gray
-Write-Host "  Get-ChildItem C:\Windows\Fonts\arial*.ttf | Select Name`n" -ForegroundColor Gray
+Write-Host "  Get-ChildItem $systemFontsPath\arial*.ttf | Select Name`n" -ForegroundColor Gray
 
 $reboot = Read-Host "Restart now? (Y/N)"
 if ($reboot -eq 'Y' -or $reboot -eq 'y') {

@@ -19,7 +19,7 @@ The script extracts fonts from Windows installation media at runtime. Three opti
 
 | Option | How |
 |--------|-----|
-| 💾 📀 **USB / DVD** *(easiest)* | Plug in any Windows installation USB or DVD — detected automatically, no extra steps |
+| **💾 USB / 📀 DVD** *(easiest)* | Plug in any Windows installation USB or DVD — detected automatically, no extra steps |
 | 💿 **ISO in script folder** | Drop a `.iso` file into the same folder as the script — picked up automatically |
 | 💿 **Explicit ISO path** | Pass the path via `RUN.bat "D:\ISOs\Win11.iso"` or `-IsoPath "D:\ISOs\Win11.iso"` |
 

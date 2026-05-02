@@ -13,7 +13,7 @@ Restores corrupted or missing Windows system fonts by extracting them from a Win
 - Windows installation media *(ISO or USB/DVD — see **Supplying Fonts** below; not needed if `.\.Fonts\` is already populated)*
 - DISM PowerShell module *(built into Windows — no third-party tools required)*
 
-## � Supplying Fonts
+## 📁 Supplying Fonts
 
 The script extracts fonts from Windows installation media at runtime. Three options, in order of convenience:
 
@@ -27,7 +27,7 @@ The script extracts fonts from Windows installation media at runtime. Three opti
 
 ---
 
-## �🔧 Parameters
+## 🔧 Parameters
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|

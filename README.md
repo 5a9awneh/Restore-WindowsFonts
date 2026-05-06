@@ -6,6 +6,69 @@
 
 Restores corrupted or missing Windows system fonts by extracting them from a Windows ISO you supply, then reinstalling them, clearing font caches, and repairing font registry entries. Resolves Adobe Acrobat "Cannot find or create the font" errors caused by missing Arial, Times New Roman, and Courier New.
 
+---
+
+**The problem — Acrobat reports missing fonts and falls back to incorrect rendering:**
+
+<img src="images/screenshots/error-acrobat-font-missing.png" alt="Adobe Acrobat error: Cannot find or create the font 'ArialMT'"/>
+
+**On launch, the script summarises what it will change and waits for confirmation:**
+
+```
+=======================================
+  Windows Font Restoration Tool v1.0
+=======================================
+Fixes Adobe Acrobat font errors & corrupted system fonts
+
+This script will:
+  - Stop font cache services
+  - Clear the system font cache
+  - Take ownership of files in C:\Windows\Fonts
+  - Overwrite system font files
+  - Modify font registry entries
+
+Type YES to continue or press Enter to abort: YES
+
+[0/6] Checking font bundle...
+  Source: ISO auto-detected in script folder: C:\...\Win11.iso
+  Mounting ISO and extracting fonts from install.wim...
+  30 fonts extracted to .\Fonts\
+
+[1/6] Stopping font cache services...
+[2/6] Clearing font cache...
+[3/6] Taking ownership of font files...
+[4/6] Copying fonts to C:\Windows\Fonts...
+[5/6] Restoring font registry entries...
+[6/6] Restarting font services...
+
+  Reboot recommended to fully apply changes.
+```
+*(representative)*
+
+```mermaid
+flowchart TD
+    A([Run as Administrator]) --> B{Confirm changes?}
+    B -- "Enter  abort" --> ABORT([Aborted — no changes])
+    B -- "YES" --> C{".\Fonts\ populated?"}
+    C -- "Yes — skip acquisition" --> REPAIR
+    C -- "No — locate media" --> D{"Media source?"}
+    D --> E["Mount ISO / access USB-WIM\nExtract 30 fonts to .\\Fonts\\"]
+    E --> REPAIR
+    subgraph REPAIR ["Steps 1–6  Font repair"]
+        F["Stop font cache services\nClear FNTCACHE.DAT"]
+        F --> G["Take ownership\nCopy fonts → C:\\Windows\\Fonts"]
+        G --> H["Restore registry entries\nRestart services"]
+    end
+    H --> DONE([Done — reboot to apply])
+
+    classDef success fill:#2d6a2d,color:#fff,stroke:#1a3d1a
+    classDef warning fill:#7a5500,color:#fff,stroke:#4d3600
+    class DONE success
+    class ABORT warning
+```
+
+---
+
 ## ⚙️ Requirements
 
 - Windows 10 / 11
